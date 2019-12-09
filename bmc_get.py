@@ -2,43 +2,66 @@
 
 import sys
 from selenium import webdriver
+from threading import Thread,Semaphore
 import time
 import re
+import subprocess
+from selenium.webdriver.support.ui import WebDriverWait
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-browser = webdriver.Chrome()
 
-browser.get('https://10.44.192.156')
+file = open("information.txt", "r") #用户名文件
+ip_list = []
+for i in file.readlines():
+    i_array = i.split("\t")
+    ip_list.append(i_array[0])
+file.close()
+sem = Semaphore(5)
 
-browser.maximize_window()
-browser.implicitly_wait(10)
+def get_info(ip,username='Administrator',passwd='Admin@9000'):
+    browser = webdriver.Chrome()
+    browser.get('https://%s'%ip)
+    time.sleep(5)
+    if not browser.find_element_by_css_selector("body"):
+        SN = 'Unable to connection'
+        with open('result.txt','a') as f:
+            f.write( ip +';'+ SN +'\n')
+            f.close()
+        browser.quit()
+    else:
+        print  '%s is runnung ...'%ip
+        browser.maximize_window()
+        browser.implicitly_wait(10)
+        
+        browser.find_element_by_id('iptUserName').send_keys('%s'%username)
+        browser.implicitly_wait(1)
+        browser.find_element_by_id('iptPassword').send_keys('%s'%passwd)
+        browser.find_element_by_id("btnLogin").click()
+        browser.implicitly_wait(10)
+    
+        browser.switch_to.default_content()
+        browser.switch_to.frame("rightMid")
+        browser.implicitly_wait(30)
+        WebDriverWait(browser, 10).until(lambda the_driver:the_driver.find_element_by_id('txtSequence').is_displayed())
+        SN = browser.find_element_by_id('txtBMCIp').text
+        BMCIP = browser.find_element_by_id('txtSequence').text
+        
+        with open('result.txt','a') as f:
+            f.write( BMCIP +';'+ SN +'\n')
+            f.close()
+        sem.release()
+        browser.quit()
 
-browser.find_element_by_id('iptUserName').send_keys('Administrator')
-browser.implicitly_wait(1)
-browser.find_element_by_id('iptPassword').send_keys('Huawei12#$')
-browser.find_element_by_id("btnLogin").click()
-browser.implicitly_wait(10)
-#iframe = browser.find_element_by_xpath('//*[@id="rightMid"]')
+def main():
+    for ip in ip_list:
+        sem.acquire()
+        t = Thread(target=get_info,args=(ip,))
+        t.start()
+                
+    #time.sleep(10)
+    
 
-
-
-browser.switch_to.default_content()
-browser.switch_to.frame("rightMid")
-#SN = browser.find_element_by_id('floatTitle').text
-#BMCIP = browser.find_element_by_css_selector("#txtBMCIp").text()
-#SN = browser.find_element_by_partial_link_text("序列")#BMCIP = browser.switchTo().frame("left_frame").findElement(By.id("txtBMCIp"))
-#BMCIP = browser.find_element_by_id('txtBMCIp').text
-#browser.find_element_by_css_selector("#lnkNetWorkCfg").click()
-browser.find_element_by_id('btnLightBlink').click()
-#BMCIP = browser.find_element_by_id("server_name_hidden").get_attribute("value")
-def write_to_file():
-    with open('result.txt','w') as f:
-#        f.write( BMCIP + '\n')
-#        f.write( SN + '\n')
-        f.write( '哇哈哈' + '\n')
-        f.close()
-write_to_file()
-#time.sleep(10)
-#browser.quit()
+if __name__=="__main__":
+    main()
