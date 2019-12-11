@@ -1,0 +1,19 @@
+1.首先安装好python环境；
+
+2.下载selenium文件 ：https://github.com/rudyshine/selenium.git；
+
+3.解压后放在python的安装目录内，目录为...python\Lib\site-packages中；
+
+4.进入手动放置有setup.py文件的文件夹内,空白处按住Shift+鼠标右键，选择在此处打开命令窗口；
+
+5.输入命令:python setup.py install。
+
+备注：在线安装若遇到错误：PermissionError: [WinError 5] 拒绝访问
+
+解决办法：
+
+1.C:\Windows\System32目录下，右键单击cmd.exe文件以管理员身份运行；
+
+2.发现路径名变成了C:\Windows\system32>；
+
+3.重新执行pip install lxml，在安装selenium模块就可以。
